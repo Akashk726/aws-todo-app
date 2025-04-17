@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formal TODO Application</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #f9fafb; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">TODO Application</h1>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <input id="todoInput" type="text" placeholder="Task" class="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <select id="priorityInput" class="p-2 border rounded">
+        <option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="LOW">Low</option>
+      </select>
+      <select id="statusInput" class="p-2 border rounded">
+        <option value="TO DO">To Do</option>
+        <option value="IN PROGRESS">In Progress</option>
+        <option value="DONE">Done</option>
+      </select>
+      <select id="categoryInput" class="p-2 border rounded">
+        <option value="WORK">Work</option>
+        <option value="HOME">Home</option>
+        <option value="LEARNING">Learning</option>
+      </select>
+      <input id="dueDateInput" type="date" class="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button onclick="addTodo()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 col-span-2">Add Task</button>
+    </div>
+    <ul id="todoList" class="space-y-2"></ul>
+  </div>
+  <script>
+    async function fetchTodos() {
+      const response = await fetch('/todos');
+      const todos = await response.json();
+      const todoList = document.getElementById('todoList');
+      todoList.innerHTML = '';
+      todos.forEach(todo => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center p-2 bg-gray-100 rounded';
+        li.innerHTML = `
+          <span>${todo.todo} (Priority: ${todo.priority}, Status: ${todo.status}, Category: ${todo.category}, Due: ${todo.dueDate})</span>
+          <button onclick="deleteTodo(${todo.id})" class="text-red-500 hover:text-red-700">Delete</button>
+        `;
+        todoList.appendChild(li);
+      });
+    }
+
+    async function addTodo() {
+      const todo = document.getElementById('todoInput').value.trim();
+      const priority = document.getElementById('priorityInput').value;
+      const status = document.getElementById('statusInput').value;
+      const category = document.getElementById('categoryInput').value;
+      const dueDate = document.getElementById('dueDateInput').value;
+      if (!todo || !dueDate) return alert('Task and Due Date are required');
+      const id = Date.now();
+      await fetch('/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, todo, priority, status, category, dueDate })
+      });
+      document.getElementById('todoInput').value = '';
+      document.getElementById('dueDateInput').value = '';
+      fetchTodos();
+    }
+
+    async function deleteTodo(id) {
+      await fetch(`/todos/${id}`, { method: 'DELETE' });
+      fetchTodos();
+    }
+
+    fetchTodos();
+  </script>
+</body>
+</html>
